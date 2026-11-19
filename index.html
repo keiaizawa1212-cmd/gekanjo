@@ -1,0 +1,1417 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1d4ed8">
+<title>月別御勘定書</title>
+<style>
+:root{
+  --blue:#1d4ed8; --blue-soft:#eff4ff;
+  --green:#16a34a; --orange:#f97316; --teal:#0f766e;
+  --ink:#0f172a; --sub:#475569; --muted:#94a3b8;
+  --line:#e2e8f0; --bg:#f4f6f9; --white:#fff;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(15,23,42,.06),0 4px 14px rgba(15,23,42,.05);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
+  font-size:14px;line-height:1.6;
+  padding-bottom:calc(24px + env(safe-area-inset-bottom));
+}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+a{color:var(--blue)}
+.boot{padding:60px 20px;text-align:center;color:var(--muted)}
+
+/* ---------- header ---------- */
+.appbar{
+  position:sticky;top:0;z-index:30;background:var(--white);
+  border-bottom:1px solid var(--line);
+  padding:calc(8px + env(safe-area-inset-top)) 12px 8px;
+  display:flex;align-items:center;gap:8px;
+}
+.appbar h1{font-size:15px;margin:0;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.appbar .grow{flex:1}
+.iconbtn{
+  width:36px;height:36px;border-radius:10px;display:grid;place-items:center;
+  font-size:17px;line-height:1;color:var(--sub);
+}
+.iconbtn:hover{background:#f1f5f9}
+.iconbtn.on{background:var(--blue-soft);color:var(--blue)}
+.ver{font-size:10px;color:var(--muted);letter-spacing:.02em}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;background:#e9eef5;border-bottom:1px solid var(--line);position:sticky;top:calc(52px + env(safe-area-inset-top));z-index:29}
+.tabs button{
+  flex:1;padding:11px 0 10px;font-size:14px;font-weight:600;color:var(--sub);
+  border-top:3px solid transparent;background:#e9eef5;
+}
+.tabs button.sel{background:var(--white);color:var(--blue);border-top-color:var(--blue)}
+
+/* ---------- layout ---------- */
+.wrap{max-width:860px;margin:0 auto;padding:12px}
+.subbar{display:flex;align-items:center;gap:6px;padding:2px 2px 10px}
+.period{display:flex;align-items:center;gap:2px;background:var(--white);border:1px solid var(--line);border-radius:10px;padding:2px;box-shadow:var(--shadow)}
+.period .lab{font-weight:700;font-size:14px;padding:0 8px;min-width:104px;text-align:center;letter-spacing:.02em}
+.period button{width:30px;height:30px;border-radius:8px;color:var(--sub);font-size:14px}
+.period button:hover{background:#f1f5f9}
+.spacer{flex:1}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:9px 14px;border-radius:10px;font-size:13.5px;font-weight:600;
+  background:var(--white);border:1px solid var(--line);color:var(--ink);
+}
+.btn:hover{background:#f8fafc}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.primary:hover{background:#1a45c0}
+.btn.danger{color:#b91c1c;border-color:#fecaca;background:#fff}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--blue)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:6px 10px;font-size:12.5px;border-radius:8px}
+
+.empty{
+  background:var(--white);border:1px dashed var(--line);border-radius:var(--radius);
+  padding:34px 18px;text-align:center;color:var(--muted);font-size:13px;
+}
+.hint{font-size:12px;color:var(--muted);line-height:1.55}
+
+/* ---------- cards ---------- */
+.cards{display:flex;flex-direction:column;gap:9px}
+.card{
+  background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px 12px 12px 14px;box-shadow:var(--shadow);
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;
+}
+.card.done{background:#f2f4f7;border-color:#e6e9ee;box-shadow:none}
+.card.done .cname,.card.done .amount{color:#94a3b8}
+.card.locked{position:relative}
+.card-main{min-width:0}
+.cname{
+  font-size:15px;font-weight:700;margin:0 0 2px;line-height:1.35;
+  overflow-wrap:anywhere;
+}
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px}
+.chip{
+  font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:5px;
+  background:#eef2f7;color:var(--sub);letter-spacing:.02em;line-height:1.6;
+}
+.chip.inv{background:#eef4ff;color:#1d4ed8}
+.chip.rec{background:#ecfdf5;color:#047857}
+.chip.tax{background:#fff7ed;color:#c2410c}
+.chip.warn{background:#fef2f2;color:#b91c1c}
+.meta{font-size:11.5px;color:var(--muted);margin:0;line-height:1.6;overflow-wrap:anywhere}
+.amount{font-size:15px;font-weight:700;margin:5px 0 0;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.lockmark{font-size:11px;color:var(--muted);margin-left:4px}
+
+/* steps */
+.steps{display:flex;gap:2px;align-items:flex-start}
+.step{display:flex;flex-direction:column;align-items:center;gap:3px;width:46px}
+.step .dot{
+  width:32px;height:32px;border-radius:50%;display:grid;place-items:center;
+  font-size:12px;font-weight:800;border:2px solid var(--line);color:#cbd5e1;background:#fff;
+  transition:transform .12s ease;
+}
+.step .dot:active{transform:scale(.92)}
+.step .lbl{font-size:9.5px;font-weight:700;color:#b6c0cd;letter-spacing:.01em;line-height:1.2;text-align:center}
+.step[data-k="input"] .dot{border-color:#c7e9d2}
+.step[data-k="mf"]    .dot{border-color:#c7d7f7}
+.step[data-k="go"]    .dot{border-color:#fbd9bc}
+.step[data-k="sent"]  .dot{border-color:#bcd8d4}
+.step.ok[data-k="input"] .dot{background:var(--green);border-color:var(--green);color:#fff}
+.step.ok[data-k="mf"]    .dot{background:var(--blue);border-color:var(--blue);color:#fff}
+.step.ok[data-k="go"]    .dot{background:var(--orange);border-color:var(--orange);color:#fff}
+.step.ok[data-k="sent"]  .dot{background:var(--teal);border-color:var(--teal);color:#fff}
+.step.ok .lbl{color:var(--sub)}
+.step.next .dot{border-color:currentColor}
+.step.next[data-k="input"] .dot{color:var(--green);box-shadow:0 0 0 4px rgba(22,163,74,.14)}
+.step.next[data-k="mf"]    .dot{color:var(--blue);box-shadow:0 0 0 4px rgba(29,78,216,.14)}
+.step.next[data-k="go"]    .dot{color:var(--orange);box-shadow:0 0 0 4px rgba(249,115,22,.16)}
+.step.next[data-k="sent"]  .dot{color:var(--teal);box-shadow:0 0 0 4px rgba(15,118,110,.14)}
+.step.next .lbl{color:var(--ink)}
+.step.dis .dot{opacity:.5}
+.card.done .step .dot{background:#dfe4ea;border-color:#dfe4ea;color:#fff}
+.card.done .step .lbl{color:#b6c0cd}
+
+@media(max-width:430px){
+  .step{width:36px}
+  .step .dot{width:26px;height:26px;font-size:11px}
+  .step .lbl{font-size:8.5px}
+  .cname{font-size:14px}
+  .amount{font-size:14px}
+  .card{padding:11px 8px 11px 12px;gap:6px}
+  .appbar h1{font-size:14px}
+  .period .lab{min-width:92px;font-size:13px}
+}
+/* ---------- views ---------- */
+.panel{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+.panel + .panel{margin-top:10px}
+.vhead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.vhead h2{font-size:16px;margin:0;font-weight:700}
+.vhead .spacer{flex:1}
+.field{margin-bottom:13px}
+.field > label{display:block;font-size:12px;font-weight:700;color:var(--sub);margin-bottom:5px}
+.field .req{color:#b91c1c;font-weight:700}
+.input,select.input,textarea.input{
+  width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:10px;
+  background:#fbfcfe;font-size:15px;
+}
+.input:focus{outline:2px solid var(--bls,#c7d7f7);border-color:var(--blue);background:#fff}
+.input[readonly]{background:#f1f5f9;color:var(--sub)}
+.seg{display:flex;gap:6px}
+.seg button{
+  flex:1;padding:9px 0;border-radius:10px;border:1px solid var(--line);
+  background:#fbfcfe;font-size:13.5px;font-weight:700;color:var(--sub)
+}
+.seg button.sel{background:var(--blue-soft);border-color:#bcd0f7;color:var(--blue)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:430px){.row2{grid-template-columns:1fr}}
+.formfoot{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin-top:18px;flex-wrap:wrap}
+.tname{font-size:17px;font-weight:800;margin:0 0 2px;line-height:1.4;overflow-wrap:anywhere}
+.tsub{font-size:12px;color:var(--muted);margin:0}
+
+/* set screen */
+.searchrow{display:flex;gap:8px;margin-bottom:10px}
+.searchrow .input{flex:1}
+.setlist{border:1px solid var(--line);border-radius:12px;overflow:hidden;max-height:min(48vh,420px);overflow-y:auto;background:#fff}
+.srow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer}
+.srow:last-child{border-bottom:0}
+.srow.reg{background:#f8fafc;color:var(--muted);cursor:default}
+.srow .nm{flex:1;min-width:0;font-size:13.5px;overflow-wrap:anywhere}
+.srow.reg .nm{color:var(--muted)}
+.srow .tag{font-size:10px;font-weight:700;color:#94a3b8;background:#eef2f7;padding:1px 6px;border-radius:5px;white-space:nowrap}
+.box{
+  width:20px;height:20px;border-radius:6px;border:2px solid #cbd5e1;flex:none;
+  display:grid;place-items:center;font-size:12px;color:#fff;background:#fff
+}
+.srow.sel .box{background:var(--blue);border-color:var(--blue)}
+.setfoot{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.count{font-size:13px;font-weight:700}
+.count b{font-size:16px}
+
+/* sales */
+.sumgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.kpi{background:linear-gradient(180deg,#fbfdff,#f2f6fd);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .k{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.03em}
+.kpi .v{font-size:20px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+table.tbl th{
+  text-align:left;font-size:11px;color:var(--sub);font-weight:700;letter-spacing:.03em;
+  padding:7px 6px;border-bottom:1px solid var(--line);background:#fafbfd;white-space:nowrap
+}
+table.tbl td{padding:9px 6px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+table.tbl th.num,table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.tbl tr:last-child td{border-bottom:0}
+table.tbl tr.tot td{font-weight:800;background:#fafbfd;border-top:2px solid var(--line)}
+.dupe{font-size:11.5px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin-top:10px}
+
+/* history */
+.hist{display:flex;flex-direction:column;gap:8px}
+.hmonth{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:#fff;cursor:pointer}
+.hmonth.sel{border-color:#bcd0f7;background:var(--blue-soft)}
+.hmonth .m{font-weight:700;font-size:14px}
+.hmonth .s{font-size:11.5px;color:var(--muted)}
+
+/* detail timeline */
+.tl{list-style:none;margin:0;padding:0}
+.tl li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f4f6f9}
+.tl li:last-child{border-bottom:0}
+.tl .dt{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;flex:none}
+.tl .tx{font-size:13px}
+.tl .ts{font-size:11px;color:var(--muted)}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13.5px;margin:0}
+.dl dt{color:var(--sub);font-size:12px;font-weight:700;padding-top:1px}
+.dl dd{margin:0;overflow-wrap:anywhere}
+.logrow{font-size:12px;padding:7px 0;border-bottom:1px solid #f4f6f9;display:flex;gap:8px;align-items:flex-start}
+.logrow:last-child{border-bottom:0}
+.ok{color:#047857;font-weight:700}
+.ng{color:#b91c1c;font-weight:700}
+
+/* toast */
+.toasts{position:fixed;top:calc(10px + env(safe-area-inset-top));left:0;right:0;z-index:90;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;padding:0 12px}
+.toast{
+  pointer-events:auto;max-width:440px;width:100%;
+  background:#0f172a;color:#fff;border-radius:11px;padding:10px 14px;font-size:13px;
+  box-shadow:0 8px 24px rgba(15,23,42,.24);
+  display:flex;gap:10px;align-items:center;
+  animation:tin .18s ease-out;
+}
+.toast.err{background:#7f1d1d}
+.toast.ok{background:#065f46}
+.toast .x{margin-left:auto;opacity:.7;font-size:15px;padding:0 2px}
+@keyframes tin{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:80;background:rgba(15,23,42,.42);display:flex;align-items:flex-end;justify-content:center;padding:0}
+@media(min-width:520px){.modal{align-items:center;padding:20px}}
+.modal .sheet{background:#fff;width:100%;max-width:460px;border-radius:16px 16px 0 0;padding:18px;max-height:88vh;overflow:auto}
+@media(min-width:520px){.modal .sheet{border-radius:16px}}
+.modal h3{font-size:15px;margin:0 0 12px;font-weight:700}
+.modal .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+
+/* menu */
+.menu{
+  position:absolute;right:10px;top:calc(46px + env(safe-area-inset-top));z-index:40;
+  background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);
+  min-width:184px;padding:6px;overflow:hidden
+}
+.menu button{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:8px;font-size:13.5px}
+.menu button:hover{background:#f4f7fb}
+.menu hr{border:0;border-top:1px solid var(--line);margin:5px 0}
+.badge-admin{font-size:10px;font-weight:800;color:#c2410c;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:1px}
+.warnbanner{
+  background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:11px;
+  padding:10px 13px;font-size:12.5px;margin-bottom:10px;line-height:1.6
+}
+.loginwrap{max-width:360px;margin:12vh auto;padding:22px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+</style>
+</head>
+<body>
+<div id="boot" class="boot">読み込み中…</div>
+<div id="app" hidden></div>
+<div id="toasts" class="toasts"></div>
+<script type="application/json" id="master-data">[]</script>
+<script>
+"use strict";
+/* ============================================================
+   月別御勘定書  v2.0.0
+   単一ファイル・オフライン動作（localStorage）／Firebase設定時は共有保存
+   ============================================================ */
+const VERSION = "2.0.0";
+const CHATWORK_ROOM = "453454218";
+const CHATWORK_ROOM_NAME = "月別御勘定書瓦版";
+const STEPS = [
+  { k:"input", label:"入力",     color:"#16a34a", name:"入力" },
+  { k:"mf",    label:"MF作成",   color:"#1d4ed8", name:"MF作成" },
+  { k:"go",    label:"GO",       color:"#f97316", name:"GO" },
+  { k:"sent",  label:"送付",     color:"#0f766e", name:"送付" }
+];
+const STEP_KEYS = STEPS.map(s=>s.k);
+
+/* Firebase を使う場合だけ設定（静的ホスティング＋共有保存） */
+const FIREBASE_CONFIG = null;
+/* 例:
+const FIREBASE_CONFIG = {
+  apiKey:"...", authDomain:"xxx.firebaseapp.com", projectId:"xxx",
+  storageBucket:"xxx.appspot.com", messagingSenderId:"...", appId:"..."
+};
+*/
+const ADMIN_PIN_KEY = "gekanjo.admin";
+
+/* ---------- utils ---------- */
+const $  = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+const pad2 = n => String(n).padStart(2,"0");
+const yen = n => "¥" + (Number(n)||0).toLocaleString("ja-JP");
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nowISO = ()=>new Date().toISOString();
+const fyOf = (y,m) => (m>=10 ? y : y-1);
+const fyLabel = fy => fy + "年10月〜" + (fy+1) + "年9月";
+const ymKey = (y,m) => y + "-" + pad2(m);
+const ymLabel = (y,m) => y + "年" + m + "月";
+const ymText = ym => { const [y,m]=ym.split("-").map(Number); return ymLabel(y,m); };
+const MONTH_ORDER = [10,11,12,1,2,3,4,5,6,7,8,9];
+const yearFor = (fy,m) => (m>=10 ? fy : fy+1);
+function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
+function fmtDT(iso){
+  if(!iso) return "";
+  const d = new Date(iso);
+  if(isNaN(d)) return "";
+  return d.getFullYear()+"/"+pad2(d.getMonth()+1)+"/"+pad2(d.getDate())+" "+pad2(d.getHours())+":"+pad2(d.getMinutes());
+}
+function fmtD(s){
+  if(!s) return "";
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  return m ? (m[1]+"/"+m[2]+"/"+m[3]) : s;
+}
+
+/* ---------- state ---------- */
+let DB = null;
+let UI = {
+  tab:"bill", view:"list", billId:null,
+  period:null,            // {year, month}
+  admin:false,
+  salesScope:"all",
+  setFY:null, setMonth:null, setTax:false, setSearch:"", setSel:{}, setExtra:[],
+  menuOpen:false, historyMonths:[]
+};
+let cloud = { on:false, db:null, docRef:null, user:null, unsub:null };
+let saveTimer = null;
+
+function freshDB(){
+  return {
+    version:2, seeded:false,
+    customers:[], staff:[], bills:[],
+    settings:{ pin:"0000", proxy:"", comment:"", updatedAt:nowISO() },
+    seq:2000
+  };
+}
+
+/* ---------- storage ---------- */
+const LS_KEY = "gekanjo.db.v2";
+
+function loadLocal(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return null;
+    const o = JSON.parse(raw);
+    return (o && o.version===2) ? o : null;
+  }catch(e){ return null; }
+}
+function saveLocal(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(DB)); }
+  catch(e){ toast("この端末に保存できませんでした（空き容量をご確認ください）","err"); }
+}
+function persist(){
+  DB.settings.updatedAt = nowISO();
+  if(cloud.on && cloud.docRef){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(()=>{
+      cloud.docRef.set({ data: DB, updatedAt: nowISO() }, { merge:false })
+        .catch(e=>toast("共有保存に失敗しました：" + (e && e.message ? e.message : "通信エラー"),"err"));
+    }, 400);
+  } else {
+    saveLocal();
+  }
+}
+
+async function initCloud(){
+  if(!FIREBASE_CONFIG) return false;
+  const [{ initializeApp }, fs, au] = await Promise.all([
+    import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"),
+    import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"),
+    import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js")
+  ]);
+  const app = initializeApp(FIREBASE_CONFIG);
+  const db = fs.getFirestore(app);
+  const auth = au.getAuth(app);
+  cloud.fs = fs; cloud.au = au; cloud.auth = auth; cloud.fbdb = db;
+  cloud.docRef = fs.doc(db, "gekanjo_workspace", "main");
+  const cred = await au.signInWithEmailAndPassword(
+    auth, sessionStorage.getItem("gekanjo.mail") || "", sessionStorage.getItem("gekanjo.pass") || ""
+  ).catch(()=>null);
+  if(!cred) return "need_login";
+  return true;
+}
+
+/* ---------- seeding ---------- */
+function seedMaster(){
+  if(DB.seeded && DB.customers.length) return;
+  let master = [];
+  try { master = JSON.parse(($("#master-data")||{textContent:"[]"}).textContent) || []; } catch(e){ master = []; }
+  if(!Array.isArray(master) || !master.length) return;
+  DB.customers = master.map(c=>({
+    id:c.id, name:c.name, kana:c.kana||"", reg:c.reg, month:c.month, tax:!!c.tax, added:false
+  }));
+  DB.seeded = true;
+}
+
+/* ---------- bill helpers ---------- */
+function billsOf(y,m){
+  const k = ymKey(y,m);
+  return DB.bills.filter(b=>b.ym===k).sort((a,b)=> (a.sortKey||0)-(b.sortKey||0));
+}
+function stepIndex(b){
+  const s = b.steps||{};
+  for(let i=0;i<STEP_KEYS.length;i++){ if(!s[STEP_KEYS[i]]) return i; }
+  return STEP_KEYS.length;
+}
+function statusText(b){
+  const i = stepIndex(b);
+  if(b.locked) return "完了（ロック）";
+  return ["入力待ち","入力完了・MF作成待ち","MF送信待ち","送付待ち（GO済）","完了"][i] || "完了";
+}
+function defaultPrintDate(b){
+  const [y,m] = b.ym.split("-").map(Number);
+  if(b.type==="receipt") return todayStr();
+  return y + "-" + pad2(m) + "-25";
+}
+function customerName(b){
+  const c = DB.customers.find(x=>x.id===b.customerId);
+  return c ? c.name : (b.customerName||"(削除された得意先)");
+}
+
+/* ---------- notifications ---------- */
+function messageFor(b, kind){
+  const nm = customerName(b);
+  const st = b.staff || "未割当";
+  const doc = b.type==="receipt" ? "領収書" : "請求書";
+  const dateLab = b.type==="receipt" ? "領収日" : "請求日";
+  if(kind==="inputdone"){
+    return "【入力完了】" + nm + "\n担当: " + st + " / 金額: " + yen(b.amount) + " / " + doc + " / " + dateLab + " " + fmtD(b.printDate) + "\n→ 総務はMFで書類を作成してください。";
+  }
+  if(kind==="go"){
+    return "【送信GO】" + nm + "\n担当: " + st + " / " + yen(b.amount) + " / " + doc + " / " + dateLab + " " + fmtD(b.printDate) + "\n→ 総務はMFでメール送付してください。";
+  }
+  return "";
+}
+function setMessage(y,m,tax,count,names){
+  return "【月別御勘定書】" + ymLabel(y,m) + (tax?"（所得税）":"") + " 入力依頼\n対象 " + count + "件\n担当者の方はアプリで入力してください。\n（" + names.slice(0,6).join("、") + (names.length>6?" ほか":"") + "）";
+}
+async function post(text){
+  const proxy = (DB.settings.proxy||"").trim();
+  if(!proxy) return { ok:false, error:"自動投稿が未設定です（Chatworkを開いて手動で投稿してください）" };
+  try{
+    const r = await fetch(proxy, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ room_id: CHATWORK_ROOM, body: text })
+    });
+    if(!r.ok) return { ok:false, error:"投稿に失敗しました（HTTP " + r.status + "）" };
+    let j = null;
+    try{ j = await r.json(); }catch(e){ j = null; }
+    if(j && j.ok === false) return { ok:false, error: j.error || "投稿に失敗しました" };
+    return { ok:true };
+  }catch(e){
+    return { ok:false, error:"投稿に失敗しました（" + (e.message||"通信エラー") + "）" };
+  }
+}
+async function notifyBill(b, kind, quiet){
+  const text = messageFor(b, kind);
+  const res = await post(text);
+  b.notify = b.notify || [];
+  b.notify.push({ kind, at:nowISO(), ok:res.ok, error:res.ok?"":res.error, text });
+  persist();
+  if(quiet) return res;
+  if(res.ok) toast("Chatworkへ投稿しました","ok");
+  else toast("Chatworkへ自動投稿できませんでした。詳細画面から再送できます。","err");
+  return res;
+}
+function copyText(t){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(()=>toast("文面をコピーしました","ok"), ()=>fallbackCopy(t));
+  } else fallbackCopy(t);
+}
+function fallbackCopy(t){
+  const ta = document.createElement("textarea");
+  ta.value = t; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select();
+  let ok=false; try{ ok = document.execCommand("copy"); }catch(e){}
+  document.body.removeChild(ta);
+  toast(ok?"文面をコピーしました":"コピーできませんでした。手動で選択してください", ok?"ok":"err");
+}
+function chatworkURL(){ return "https://www.chatwork.com/#!rid" + CHATWORK_ROOM; }
+
+/* ---------- toast / modal ---------- */
+function toast(msg, kind){
+  const box = $("#toasts");
+  const el = document.createElement("div");
+  el.className = "toast" + (kind==="err"?" err":kind==="ok"?" ok":"");
+  el.innerHTML = '<span>' + esc(msg) + '</span><button class="x" aria-label="閉じる">×</button>';
+  el.querySelector(".x").onclick = ()=>el.remove();
+  box.appendChild(el);
+  setTimeout(()=>{ if(el.parentNode) el.remove(); }, kind==="err"?6000:3600);
+}
+function closeModal(){ const m=$(".modal"); if(m) m.remove(); }
+function openModal(html){
+  closeModal();
+  const d = document.createElement("div");
+  d.className="modal";
+  d.innerHTML = '<div class="sheet">' + html + '</div>';
+  d.addEventListener("click", e=>{ if(e.target===d) closeModal(); });
+  document.body.appendChild(d);
+  return d;
+}
+function confirmModal(title, body, okLabel, okClass){
+  return new Promise(res=>{
+    const d = openModal(
+      "<h3>" + esc(title) + "</h3><div class='hint' style='font-size:13px;color:#475569'>" + body + "</div>" +
+      "<div class='acts'><button class='btn' data-m='no'>キャンセル</button>" +
+      "<button class='btn " + (okClass||"primary") + "' data-m='yes'>" + esc(okLabel) + "</button></div>"
+    );
+    d.addEventListener("click", e=>{
+      const b = e.target.closest("[data-m]"); if(!b) return;
+      closeModal(); res(b.dataset.m==="yes");
+    });
+  });
+}
+
+/* ---------- periodic ---------- */
+function clampPeriod(){
+  if(!UI.period){
+    const t = new Date();
+    UI.period = { year:t.getFullYear(), month:t.getMonth()+1 };
+  }
+}
+function shiftPeriod(delta){
+  const {year,month} = UI.period;
+  const d = new Date(year, month-1, 1);
+  d.setMonth(d.getMonth() + delta);
+  UI.period = { year:d.getFullYear(), month:d.getMonth()+1 };
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function render(){
+  const app = $("#app");
+  app.hidden = false;
+  const boot = $("#boot"); if(boot) boot.remove();
+  const v = UI.view;
+  let body = "";
+  if(v==="list")      body = viewList();
+  else if(v==="sales")body = viewSales();
+  else if(v==="set")  body = viewSet();
+  else if(v==="form") body = viewForm();
+  else if(v==="detail")body = viewDetail();
+  else if(v==="history")body = viewHistory();
+  else if(v==="settings")body = viewSettings();
+  app.innerHTML = header() + (UI.tab==="bill" && v==="list" ? tabs() : (UI.tab==="sales" && v==="sales" ? tabs() : "")) + '<div class="wrap">' + body + '</div>';
+}
+
+function header(){
+  const inList = (UI.view==="list" && UI.tab==="bill") || (UI.view==="sales");
+  return '<header class="appbar">' +
+    (inList
+      ? '<button class="iconbtn" data-act="menu-toggle" aria-label="メニュー">≡</button>'
+      : '<button class="iconbtn" data-act="back" aria-label="請求一覧に戻る">←</button>') +
+    '<h1>月別御勘定書</h1>' +
+    (UI.admin ? '<span class="badge-admin">総務</span>' : '') +
+    '<span class="grow"></span>' +
+    '<span class="ver">v' + VERSION + '</span>' +
+    (inList ? '<button class="iconbtn" data-act="view-list" aria-label="請求一覧">▤</button>' : '') +
+    '</header>' +
+    (UI.menuOpen ? menuHTML() : '');
+}
+function menuHTML(){
+  return '<div class="menu">' +
+    '<button data-act="tab-bill">請求一覧</button>' +
+    '<button data-act="view-history">登録履歴</button>' +
+    '<button data-act="view-settings">通知設定</button>' +
+    '<hr>' +
+    '<button data-act="admin-toggle">' + (UI.admin ? "総務モードを終了" : "総務モードに入る") + '</button>' +
+    (cloud.on ? '<button data-act="signout">ログアウト</button>' : '') +
+    '</div>';
+}
+function tabs(){
+  return '<nav class="tabs">' +
+    '<button data-act="tab-bill" class="' + (UI.tab==="bill"?"sel":"") + '">請求</button>' +
+    '<button data-act="tab-sales" class="' + (UI.tab==="sales"?"sel":"") + '">売上</button>' +
+    '</nav>';
+}
+function periodBar(){
+  const {year,month} = UI.period;
+  return '<div class="subbar">' +
+    '<div class="period">' +
+      '<button data-act="p-prev" aria-label="前月">◀</button>' +
+      '<span class="lab">' + ymLabel(year,month) + '</span>' +
+      '<button data-act="p-next" aria-label="翌月">▶</button>' +
+    '</div>' +
+    '<span class="spacer"></span>' +
+    (UI.view==="list" ? '<button class="btn primary" data-act="view-set">＋ セット</button>' : '') +
+    '</div>';
+}
+
+/* ---------- list ---------- */
+function viewList(){
+  clampPeriod();
+  const {year,month} = UI.period;
+  const list = billsOf(year,month);
+  let inner = "";
+  if(!list.length){
+    inner = '<div class="empty">' + ymLabel(year,month) + ' の請求はまだありません。<br>「＋ セット」から対象の得意先を選んで登録してください。</div>';
+  } else {
+    const open = list.filter(b=>!b.locked).length;
+    inner = '<div class="hint" style="padding:0 2px 8px">' + list.length + '件（未完了 ' + open + '件）</div>' +
+      '<div class="cards">' + list.map(cardHTML).join("") + '</div>';
+  }
+  return periodBar() + inner;
+}
+
+function cardHTML(b){
+  const si = stepIndex(b);
+  const done = si >= STEP_KEYS.length;
+  const failed = (b.notify||[]).some(n=>!n.ok) && !done;
+  const steps = STEPS.map((s,i)=>{
+    const ok = !!(b.steps||{})[s.k];
+    const isNext = !done && i===si;
+    const cls = "step" + (ok?" ok":"") + (isNext?" next":"") + (b.locked && !ok ? " dis":"");
+    const mark = ok ? "✓" : String(i+1);
+    const dis = (b.locked || (!ok && i>si)) ? " disabled" : "";
+    return '<button class="' + cls + '" data-k="' + s.k + '" data-act="step" data-id="' + b.id + '"' + dis + ' aria-label="' + s.label + '">' +
+             '<span class="dot">' + mark + '</span><span class="lbl">' + s.label + '</span>' +
+           '</button>';
+  }).join("");
+  const chips =
+    '<span class="chip ' + (b.type==="receipt"?"rec":"inv") + '">' + (b.type==="receipt"?"領収書":"請求書") + '</span>' +
+    (b.tax ? '<span class="chip tax">所得税</span>' : '') +
+    (failed ? '<span class="chip warn">通知失敗</span>' : '');
+  const sub = [];
+  if(b.content) sub.push(esc(b.content));
+  sub.push("担当 " + esc(b.staff||"未割当"));
+  if(b.printDate) sub.push((b.type==="receipt"?"領収日 ":"請求日 ") + fmtD(b.printDate));
+  return '<article class="card' + (done?" done":"") + (b.locked?" locked":"") + '" data-act="open" data-id="' + b.id + '">' +
+    '<div class="card-main">' +
+      '<div class="chips">' + chips + '</div>' +
+      '<h3 class="cname">' + esc(customerName(b)) + (b.locked?'<span class="lockmark">🔒</span>':'') + '</h3>' +
+      '<p class="meta">' + sub.join(" ／ ") + '</p>' +
+      '<p class="amount">' + (b.amount?yen(b.amount):"—") + '</p>' +
+    '</div>' +
+    '<div class="steps">' + steps + '</div>' +
+  '</article>';
+}
+
+/* ---------- card step interactions ---------- */
+async function clickStep(id, k){
+  const b = DB.bills.find(x=>x.id===id); if(!b) return;
+  if(b.locked){ toast("送付済みのためロックされています。解除は総務のみ可能です。","err"); return; }
+  const si = stepIndex(b);
+  const i = STEP_KEYS.indexOf(k);
+  b.steps = b.steps || {};
+  b.stepAt = b.stepAt || {};
+
+  if(k==="input"){
+    if(!b.steps.input){ UI.billId = id; UI.view="form"; render(); return; }
+    if(b.steps.input && !b.steps.mf){ UI.billId = id; UI.view="form"; render(); return; }
+    toast("入力済みです。変更する場合は詳細画面から開いてください。"); return;
+  }
+  if(!b.steps[k]){
+    if(i !== si){ toast("前の工程がまだ完了していません。","err"); return; }
+    if(k==="sent"){
+      const ok = await confirmModal("送付済みにしますか？",
+        esc(customerName(b)) + " を「送付」にします。全工程が完了し、この行はロックされます（解除は総務のみ）。",
+        "送付にする");
+      if(!ok) return;
+      b.steps.sent = true; b.stepAt.sent = nowISO(); b.locked = true;
+      persist(); render(); toast("送付を記録しました。ロックしました。","ok"); return;
+    }
+    b.steps[k] = true; b.stepAt[k] = nowISO();
+    persist(); render();
+    if(k==="go") notifyBill(b,"go");
+    else toast(STEPS[i].name + " を完了にしました","ok");
+    return;
+  }
+  /* 取消 */
+  const later = STEP_KEYS.slice(i+1).some(x=>b.steps[x]);
+  if(later){ toast("後の工程が完了しているため、先にそちらを取り消してください。","err"); return; }
+  const ok = await confirmModal("チェックを取り消しますか？",
+    esc(customerName(b)) + " の「" + STEPS[i].name + "」を取り消し、前の工程に戻します。", "取り消す", "danger");
+  if(!ok) return;
+  delete b.steps[k]; delete b.stepAt[k];
+  persist(); render();
+}
+
+/* ---------- set view ---------- */
+function viewSet(){
+  const today = new Date();
+  if(UI.setFY==null){ UI.setFY = fyOf(today.getFullYear(), today.getMonth()+1); }
+  if(UI.setMonth==null){ UI.setMonth = today.getMonth()+1; UI.setTax=false; }
+  const fy = UI.setFY, m = UI.setMonth, tax = UI.setTax;
+  const year = yearFor(fy,m);
+
+  const opts = MONTH_ORDER.map(mo=>{
+    const sel = (mo===m && !tax) ? " selected" : "";
+    let s = '<option value="' + mo + '"' + sel + '>' + mo + '月</option>';
+    if(mo===3) s += '<option value="3t"' + (m===3&&tax?" selected":"") + '>3月所得税</option>';
+    return s;
+  }).join("");
+  const fyOpts = [fy-2,fy-1,fy,fy+1].map(f=>'<option value="'+f+'"'+(f===fy?" selected":"")+'>'+farmFy(f)+'</option>').join("");
+
+  const target = setTargetList();
+  const registered = new Set(DB.bills.filter(b=>b.ym===ymKey(year,m) && !!b.tax===tax).map(b=>b.customerId));
+  const rows = setRowsHTML();
+
+  const selCount = target.filter(c=>!registered.has(c.id) && UI.setSel[c.id]!==false).length;
+  const others = DB.customers.filter(c=>!target.some(t=>t.id===c.id));
+
+  return '<div class="panel">' +
+    '<div class="vhead"><h2>請求のセット</h2><span class="spacer"></span>' +
+      '<button class="iconbtn" data-act="back" aria-label="戻る">×</button></div>' +
+    '<div class="row2">' +
+      '<div class="field"><label>事業年度</label><select class="input" data-act="set-fy">' + fyOpts + '</select></div>' +
+      '<div class="field"><label>申告月</label><select class="input" data-act="set-month">' + opts + '</select></div>' +
+    '</div>' +
+    '<div class="hint" style="margin:-4px 0 12px">請求対象年月は <b>' + ymLabel(year,m) + '</b>' + (tax?'（所得税）':'') + '。印字日付は各案件で入力します。</div>' +
+    '<div class="searchrow">' +
+      '<input class="input" type="search" placeholder="得意先を検索（このセット内）" value="' + esc(UI.setSearch) + '" data-act="set-search">' +
+    '</div>' +
+    (DB.customers.length ? '' :
+      '<div class="empty" style="margin-bottom:10px">得意先マスタがまだ入っていません。<br>' +
+      '<button class="btn sm" data-act="import" style="margin-top:10px">マスタを読み込む</button></div>') +
+    '<div class="setlist" id="setlist">' + rows + '</div>' +
+    '<div class="setfoot">' +
+      '<span class="count" id="setcount">選択 <b>' + selCount + '</b> 件</span>' +
+      '<button class="btn sm" data-act="set-all">すべて選択</button>' +
+      '<button class="btn sm" data-act="set-none">すべて解除</button>' +
+      '<span class="spacer" style="flex:1"></span>' +
+      '<button class="btn sm" data-act="set-add">＋ 個別追加</button>' +
+    '</div>' +
+    '<div class="formfoot">' +
+      '<button class="btn" data-act="back">やめる</button>' +
+      '<button class="btn primary" data-act="set-submit"' + (selCount?"":" disabled") + '>セットする（' + selCount + '件）</button>' +
+    '</div>' +
+    '<p class="hint" style="margin-top:12px">月を選んだだけでは保存されません。「セットする」で確定したときだけ登録されます。</p>' +
+  '</div>';
+}
+function farmFy(fy){ return fy + "年度（" + fy + "年10月〜" + (fy+1) + "年9月）"; }
+function masterFor(m, tax){
+  return DB.customers.filter(c=> c.month===m && (tax ? !!c.tax : !c.tax));
+}
+function setTargetList(){
+  const base = masterFor(UI.setMonth, UI.setTax);
+  const extra = (UI.setExtra||[]).map(id=>DB.customers.find(c=>c.id===id)).filter(Boolean)
+    .filter(c=> !base.some(x=>x.id===c.id));
+  return base.concat(extra);
+}
+function setRowsHTML(){
+  const year = yearFor(UI.setFY, UI.setMonth), m = UI.setMonth, tax = UI.setTax;
+  const registered = new Set(DB.bills.filter(b=>b.ym===ymKey(year,m) && !!b.tax===tax).map(b=>b.customerId));
+  const q = (UI.setSearch||"").trim();
+  const shown = setTargetList().filter(c=> !q || c.name.indexOf(q)>=0 || (c.kana||"").indexOf(q)>=0);
+  return shown.map(c=>{
+    const isReg = registered.has(c.id);
+    const sel = !isReg && UI.setSel[c.id] !== false;
+    return '<div class="srow ' + (isReg?"reg ":"") + (sel||isReg?"sel":"") + '" data-act="set-toggle" data-cid="' + c.id + '" data-reg="' + (isReg?1:0) + '">' +
+      '<span class="box">' + ((isReg||sel)?"✓":"") + '</span>' +
+      '<span class="nm">' + esc(c.name) + '</span>' +
+      (isReg ? '<span class="tag">登録済み</span>' : (c.added?'<span class="tag">追加</span>':'')) +
+      '</div>';
+  }).join("") || '<div class="empty" style="border:0">該当する得意先がありません</div>';
+}
+
+function setSubmit(){
+  const fy=UI.setFY, m=UI.setMonth, tax=UI.setTax, year=yearFor(fy,m);
+  const target = setTargetList();
+  const registered = new Set(DB.bills.filter(b=>b.ym===ymKey(year,m) && !!b.tax===tax).map(b=>b.customerId));
+  const picks = target.filter(c=>!registered.has(c.id) && UI.setSel[c.id]!==false);
+  if(!picks.length){ toast("登録する得意先が選ばれていません","err"); return; }
+  const base = Date.now();
+  picks.forEach((c,i)=>{
+    DB.bills.push(newBill(c, year, m, tax, base+i));
+  });
+  persist();
+  const res = post(setMessage(year,m,tax,picks.length,picks.map(c=>c.name)));
+  res.then(r=>{
+    if(r.ok) toast("セットしました（" + picks.length + "件）。Chatworkへ入力依頼を投稿しました。","ok");
+    else toast("セットしました（" + picks.length + "件）。Chatworkへの自動投稿はできませんでした。","err");
+  });
+  UI.setSel = {};
+  UI.view = "list"; UI.tab="bill";
+  UI.period = { year, month:m };
+  render();
+}
+function newBill(c, year, m, tax, sortKey){
+  return {
+    id: "b" + (DB.seq++),
+    ym: ymKey(year,m),
+    customerId: c.id,
+    customerName: c.name,
+    tax: !!tax,
+    type: "invoice",
+    staff: "",
+    content: "",
+    amount: 0,
+    printDate: year + "-" + pad2(m) + "-25",
+    printTouched: false,
+    steps: { input:false, mf:false, go:false, sent:false },
+    stepAt: {},
+    locked: false,
+    notify: [],
+    createdAt: nowISO(),
+    updatedAt: nowISO(),
+    sortKey: sortKey || Date.now()
+  };
+}
+
+/* ---------- input form ---------- */
+function viewForm(){
+  const b = DB.bills.find(x=>x.id===UI.billId);
+  if(!b){ UI.view="list"; return viewList(); }
+  const isRec = b.type==="receipt";
+  const staffOpts = '<option value="">未割当</option>' +
+    DB.staff.map(s=>'<option value="' + esc(s) + '"' + (b.staff===s?" selected":"") + '>' + esc(s) + '</option>').join("");
+  return '<div class="panel">' +
+    '<div class="vhead">' +
+      '<button class="iconbtn" data-act="back" aria-label="戻る">×</button>' +
+      '<h2 style="flex:1">入力</h2>' +
+    '</div>' +
+    '<p class="tname">' + esc(customerName(b)) + '</p>' +
+    '<p class="tsub">' + ymText(b.ym) + (b.tax?" ／ 所得税":"") + '</p>' +
+    '<div style="height:14px"></div>' +
+    '<div class="field"><label>書類の種類</label>' +
+      '<div class="seg">' +
+        '<button data-act="form-type" data-v="invoice" class="' + (!isRec?"sel":"") + '">請求書</button>' +
+        '<button data-act="form-type" data-v="receipt" class="' + (isRec?"sel":"") + '">領収書</button>' +
+      '</div></div>' +
+    '<div class="row2">' +
+      '<div class="field"><label>' + (isRec?"領収日（印字日付）":"請求日（印字日付）") + '</label>' +
+        '<input class="input" type="date" id="f-date" value="' + esc(b.printDate||"") + '"></div>' +
+      '<div class="field"><label>金額（税込）</label>' +
+        '<input class="input" type="number" inputmode="numeric" id="f-amount" value="' + (b.amount||"") + '" placeholder="0"></div>' +
+    '</div>' +
+    '<div class="field"><label>担当名</label>' +
+      '<div style="display:flex;gap:8px">' +
+        '<select class="input" id="f-staff" style="flex:1">' + staffOpts + '</select>' +
+        '<button class="btn" data-act="staff-add">＋ 新規</button>' +
+      '</div></div>' +
+    '<div class="field"><label>内容</label>' +
+      '<input class="input" type="text" id="f-content" value="' + esc(b.content||"") + '" placeholder="例：申告報酬"></div>' +
+    '<div class="formfoot">' +
+      '<button class="btn" data-act="back">キャンセル</button>' +
+      '<button class="btn primary" data-act="form-save">保存して入力完了</button>' +
+    '</div>' +
+  '</div>';
+}
+function formSave(){
+  const b = DB.bills.find(x=>x.id===UI.billId); if(!b) return;
+  const amount = Number(String($("#f-amount").value).replace(/[^\d.-]/g,"")) || 0;
+  const staff = $("#f-staff").value;
+  const content = $("#f-content").value.trim();
+  const date = $("#f-date").value;
+  if(!amount){ toast("金額を入力してください","err"); return; }
+  if(!date){ toast("印字日付を入力してください","err"); return; }
+  if(b.locked){ toast("送付済みのためロックされています","err"); return; }
+  const first = !b.steps.input;
+  b.amount = amount; b.staff = staff; b.content = content; b.printDate = date;
+  b.printTouched = true;
+  b.steps.input = true; b.stepAt.input = b.stepAt.input || nowISO();
+  b.updatedAt = nowISO();
+  persist();
+  UI.view = "list";
+  render();
+  if(first) notifyBill(b,"inputdone");
+  else toast("保存しました","ok");
+}
+function changeType(t){
+  const b = DB.bills.find(x=>x.id===UI.billId); if(!b) return;
+  const prevAuto = defaultPrintDate(b);
+  const el = $("#f-amount"), st = $("#f-staff"), ct = $("#f-content"), dt = $("#f-date");
+  // keep unsaved edits
+  if(el) b.amount = Number(el.value)||0;
+  if(st) b.staff = st.value;
+  if(ct) b.content = ct.value;
+  if(dt) b.printDate = dt.value;
+  const untouched = !b.printTouched || b.printDate === defaultPrintDate({...b, type:b.type});
+  b.type = t;
+  if(untouched) b.printDate = defaultPrintDate(b);
+  render();
+}
+
+/* ---------- detail ---------- */
+function viewDetail(){
+  const b = DB.bills.find(x=>x.id===UI.billId);
+  if(!b){ UI.view="list"; return viewList(); }
+  const si = stepIndex(b);
+  const tl = STEPS.map((s,i)=>{
+    const at = (b.stepAt||{})[s.k];
+    const ok = !!(b.steps||{})[s.k];
+    return '<li><span class="dt" style="background:' + (ok?s.color:"#dbe2ea") + '">' + (ok?"✓":(i+1)) + '</span>' +
+      '<span class="tx"><b>' + s.name + '</b>' + (ok?'<span class="ts" style="margin-left:8px">' + fmtDT(at) + '</span>':'<span class="ts" style="margin-left:8px">未了</span>') + '</span></li>';
+  }).join("");
+  const logs = (b.notify||[]).map(n=>
+    '<div class="logrow"><span class="' + (n.ok?"ok":"ng") + '">' + (n.ok?"成功":"失敗") + '</span>' +
+    '<span style="flex:1">' + ({inputdone:"入力完了", go:"送信GO"}[n.kind]||n.kind) +
+      '<span class="ts" style="color:#94a3b8;font-size:11px"> ' + fmtDT(n.at) + '</span>' +
+      (n.ok?"":'<div style="color:#b91c1c;font-size:11.5px">' + esc(n.error) + '</div>') +
+    '</span>' +
+    '<button class="btn sm" data-act="notify-retry" data-id="' + b.id + '" data-kind="' + n.kind + '">再送</button></div>'
+  ).join("") || '<p class="hint">通知の記録はまだありません。</p>';
+
+  const actions = b.locked
+    ? (UI.admin
+        ? '<button class="btn danger" data-act="unlock" data-id="' + b.id + '">ロック解除（総務）</button>'
+        : '<p class="hint">送付済みのためロックされています。解除・削除は総務のみ可能です。</p>')
+    : '<button class="btn" data-act="edit" data-id="' + b.id + '">内容を編集</button>' +
+      '<button class="btn danger" data-act="delete" data-id="' + b.id + '">この行を削除</button>';
+
+  return '<div class="panel">' +
+    '<div class="vhead"><button class="iconbtn" data-act="back" aria-label="戻る">×</button><h2 style="flex:1">詳細</h2>' +
+      '<span class="chip ' + (b.type==="receipt"?"rec":"inv") + '">' + (b.type==="receipt"?"領収書":"請求書") + '</span></div>' +
+    '<p class="tname">' + esc(customerName(b)) + '</p>' +
+    '<p class="tsub">' + statusText(b) + (b.tax?" ／ 所得税":"") + '</p>' +
+    '<div style="height:14px"></div>' +
+    '<dl class="dl">' +
+      '<dt>請求対象年月</dt><dd>' + ymText(b.ym) + '</dd>' +
+      '<dt>' + (b.type==="receipt"?"領収日":"請求日") + '</dt><dd>' + fmtD(b.printDate) + '</dd>' +
+      '<dt>金額（税込）</dt><dd><b>' + (b.amount?yen(b.amount):"—") + '</b></dd>' +
+      '<dt>担当</dt><dd>' + esc(b.staff||"未割当") + '</dd>' +
+      '<dt>内容</dt><dd>' + (b.content?esc(b.content):"—") + '</dd>' +
+    '</dl>' +
+    '<div style="height:16px"></div>' +
+    '<ul class="tl">' + tl + '</ul>' +
+  '</div>' +
+  '<div class="panel"><h2 style="font-size:14px;margin:0 0 10px">Chatwork通知</h2>' + logs +
+    '<div class="formfoot"><button class="btn sm" data-act="copy-msg" data-id="' + b.id + '">文面をコピー</button>' +
+    '<a class="btn sm" href="' + chatworkURL() + '" target="_blank" rel="noopener">Chatworkを開く</a></div>' +
+  '</div>' +
+  '<div class="panel"><div class="formfoot" style="margin-top:0">' + actions + '</div></div>';
+}
+
+/* ---------- history ---------- */
+function viewHistory(){
+  const groups = {};
+  DB.bills.forEach(b=>{
+    const key = b.ym + (b.tax?"t":"");
+    if(!groups[key]) groups[key] = { ym:b.ym, tax:b.tax, n:0, sum:0, locked:0 };
+    groups[key].n++;
+    groups[key].sum += b.amount||0;
+    if(b.locked) groups[key].locked++;
+  });
+  const keys = Object.keys(groups).sort((a,b)=> b.localeCompare(a));
+  if(!keys.length) return '<div class="panel"><div class="vhead"><button class="iconbtn" data-act="back">×</button><h2 style="flex:1">登録履歴</h2></div><div class="empty">まだ登録がありません</div></div>';
+  const sel = UI.historyMonths;
+  const rows = keys.map(k=>{
+    const g = groups[k];
+    const on = sel.indexOf(k)>=0;
+    const [y,m] = g.ym.split("-").map(Number);
+    return '<div class="hmonth' + (on?" sel":"") + '" data-act="hist-toggle" data-k="' + k + '">' +
+      '<span class="box">' + (on?"✓":"") + '</span>' +
+      '<span style="flex:1"><span class="m">' + ymLabel(y,m) + (g.tax?"（所得税）":"") + '</span><br>' +
+      '<span class="s">' + g.n + '件 ／ ' + yen(g.sum) + ' ／ 完了 ' + g.locked + '件</span></span>' +
+      '</div>';
+  }).join("");
+  const detail = sel.length ? histDetail(sel) : '<p class="hint">月を選ぶと明細を表示します（複数選択できます）。</p>';
+  return '<div class="panel">' +
+    '<div class="vhead"><button class="iconbtn" data-act="back">×</button><h2 style="flex:1">登録履歴</h2></div>' +
+    '<p class="hint" style="margin-top:0">実際に登録した請求の履歴です。申告月から会社を選ぶ画面とは別の用途で、月を締めた後も振り返れます。</p>' +
+    '<div class="hist">' + rows + '</div>' +
+  '</div>' +
+  '<div class="panel">' + detail + '</div>';
+}
+function histDetail(keys){
+  const rows = DB.bills.filter(b=> keys.indexOf(b.ym + (b.tax?"t":""))>=0)
+    .sort((a,b)=> (a.ym.localeCompare(b.ym)) || (a.sortKey||0)-(b.sortKey||0));
+  const total = rows.reduce((s,b)=>s+(b.amount||0),0);
+  return '<table class="tbl"><thead><tr><th>対象年月</th><th>会社名</th><th>担当</th><th class="num">金額</th><th>状態</th></tr></thead><tbody>' +
+    rows.map(b=>'<tr data-act="open" data-id="' + b.id + '" style="cursor:pointer">' +
+      '<td style="white-space:nowrap">' + ymText(b.ym) + '</td>' +
+      '<td>' + esc(customerName(b)) + (b.tax?' <span class="chip tax">税</span>':'') + '</td>' +
+      '<td>' + esc(b.staff||"未割当") + '</td>' +
+      '<td class="num">' + (b.amount?yen(b.amount):"—") + '</td>' +
+      '<td style="white-space:nowrap">' + statusText(b) + '</td></tr>').join("") +
+    '<tr class="tot"><td colspan="3">合計 ' + rows.length + '件</td><td class="num">' + yen(total) + '</td><td></td></tr>' +
+    '</tbody></table>';
+}
+
+/* ---------- sales ---------- */
+function viewSales(){
+  clampPeriod();
+  const {year,month} = UI.period;
+  const fy = fyOf(year,month);
+  const scope = UI.salesScope;
+  const base = DB.bills.filter(b=> scope==="sent" ? b.locked : true);
+
+  const inMonth = base.filter(b=> b.ym===ymKey(year,month));
+  const inFY = base.filter(b=>{
+    const [y,m] = b.ym.split("-").map(Number);
+    return fyOf(y,m)===fy;
+  });
+
+  const agg = list=>{
+    const m = new Map();
+    list.forEach(b=>{
+      const k = b.staff || "未割当";
+      if(!m.has(k)) m.set(k,{ n:0, sum:0 });
+      const o = m.get(k); o.n++; o.sum += b.amount||0;
+    });
+    return Array.from(m.entries()).sort((a,b)=> b[1].sum-a[1].sum);
+  };
+  const dupes = countDupes(inMonth);
+  const am = agg(inMonth), af = agg(inFY);
+  const tM = inMonth.reduce((s,b)=>s+(b.amount||0),0);
+  const tF = inFY.reduce((s,b)=>s+(b.amount||0),0);
+
+  const tblRows = (rows,total,n)=>{
+    if(!rows.length) return '<tr><td colspan="3" class="hint" style="text-align:center;padding:18px">データがありません</td></tr>';
+    return rows.map(([k,v])=>'<tr><td>' + esc(k) + '</td><td class="num">' + v.n + '</td><td class="num">' + yen(v.sum) + '</td></tr>').join("") +
+      '<tr class="tot"><td>合計</td><td class="num">' + n + '</td><td class="num">' + yen(total) + '</td></tr>';
+  };
+
+  return periodBar() +
+    '<div class="panel">' +
+      '<div class="vhead"><h2>' + ymLabel(year,month) + ' の売上</h2></div>' +
+      '<div class="seg" style="max-width:320px;margin-bottom:14px">' +
+        '<button data-act="scope" data-v="all" class="' + (scope==="all"?"sel":"") + '">登録済み全件</button>' +
+        '<button data-act="scope" data-v="sent" class="' + (scope==="sent"?"sel":"") + '">送付済みのみ</button>' +
+      '</div>' +
+      '<div class="sumgrid">' +
+        '<div class="kpi"><div class="k">全体合計</div><div class="v">' + yen(tM) + '</div></div>' +
+        '<div class="kpi"><div class="k">件数</div><div class="v">' + inMonth.length + ' 件</div></div>' +
+      '</div>' +
+      '<table class="tbl"><thead><tr><th>担当</th><th class="num">件数</th><th class="num">金額（税込）</th></tr></thead>' +
+      '<tbody>' + tblRows(am,tM,inMonth.length) + '</tbody></table>' +
+      (dupes ? '<div class="dupe">同じ得意先・金額・内容が請求書と領収書で重複している可能性が ' + dupes + ' 組あります。集計では1件として扱っています。</div>' : '') +
+    '</div>' +
+    '<div class="panel">' +
+      '<div class="vhead"><h2 style="font-size:14px">事業年度累計</h2><span class="spacer"></span><span class="hint">' + fyLabel(fy) + '</span></div>' +
+      '<div class="sumgrid">' +
+        '<div class="kpi"><div class="k">年度合計</div><div class="v">' + yen(tF) + '</div></div>' +
+        '<div class="kpi"><div class="k">件数</div><div class="v">' + inFY.length + ' 件</div></div>' +
+      '</div>' +
+      '<table class="tbl"><thead><tr><th>担当</th><th class="num">件数</th><th class="num">金額（税込）</th></tr></thead>' +
+      '<tbody>' + tblRows(af,tF,inFY.length) + '</tbody></table>' +
+      '<p class="hint" style="margin-top:12px">集計範囲：担当名ごとの入力金額（税込）の合計。' +
+        (scope==="sent"?"送付済み（ロック済み）のみを対象にしています。":"未送付・領収書も含む登録済み全件を対象にしています。") +
+        ' 同一の得意先・金額・内容が請求書と領収書の両方にある場合は1件として数えています。</p>' +
+    '</div>';
+}
+function countDupes(list){
+  const m = new Map();
+  list.forEach(b=>{
+    const k = b.customerId + "|" + (b.amount||0) + "|" + (b.content||"");
+    if(!m.has(k)) m.set(k,[]);
+    m.get(k).push(b);
+  });
+  let n=0;
+  m.forEach(v=>{ if(v.length>1 && v.some(x=>x.type!=="receipt") && v.some(x=>x.type==="receipt")) n++; });
+  return n;
+}
+
+/* ---------- settings ---------- */
+function viewSettings(){
+  const s = DB.settings;
+  return '<div class="panel">' +
+    '<div class="vhead"><button class="iconbtn" data-act="back">×</button><h2 style="flex:1">通知設定</h2></div>' +
+    '<div class="field"><label>通知先ルーム</label>' +
+      '<input class="input" value="' + CHATWORK_ROOM_NAME + '（ルームID ' + CHATWORK_ROOM + '）" readonly></div>' +
+    '<div class="field"><label>自動投稿エンドポイント</label>' +
+      '<input class="input" id="s-proxy" value="' + esc(s.proxy||"") + '" placeholder="https://…（未設定なら手動投稿）">' +
+      '<p class="hint" style="margin:6px 0 0">ChatworkのAPIトークンはこの画面に保存しません。トークンはサーバー側（Cloud Functions など）に置き、ここにはその受け口のURLだけを入れてください。未設定のときは「Chatworkを開く」で手動投稿できます。</p></div>' +
+    '<div class="formfoot"><button class="btn primary" data-act="save-settings">保存</button></div>' +
+  '</div>' +
+  '<div class="panel">' +
+    '<h2 style="font-size:14px;margin:0 0 10px">総務モード</h2>' +
+    '<p class="hint" style="margin-top:0">送付済みのロック解除・削除は総務モードでのみ行えます。' +
+      'このPINは画面側の制御です。保存側でも守るにはFirestoreのルールと認証で絞り込んでください。</p>' +
+    '<div class="field"><label>PIN（4桁以上）</label><input class="input" id="s-pin" type="text" inputmode="numeric" value="' + esc(s.pin||"") + '"></div>' +
+    '<div class="formfoot"><button class="btn" data-act="save-pin">PINを変更</button></div>' +
+  '</div>' +
+  '<div class="panel">' +
+    '<h2 style="font-size:14px;margin:0 0 10px">保存と公開</h2>' +
+    '<dl class="dl" style="font-size:13px">' +
+      '<dt>保存先</dt><dd>' + (cloud.on ? "Firebase（共有保存）" : "この端末（localStorage）") + '</dd>' +
+      '<dt>データ件数</dt><dd>得意先 ' + DB.customers.length + ' ／ 担当 ' + DB.staff.length + ' ／ 請求 ' + DB.bills.length + ' ／ 履歴 ' + DB.bills.length + '件</dd>' +
+      '<dt>版</dt><dd>v' + VERSION + '</dd>' +
+    '</dl>' +
+    '<div class="formfoot" style="justify-content:flex-start;margin-top:14px">' +
+      '<button class="btn sm" data-act="export">バックアップ（JSON）</button>' +
+      '<button class="btn sm" data-act="import">復元</button>' +
+      '<button class="btn sm" data-act="checkver">最新版を確認</button>' +
+    '</div>' +
+  '</div>';
+}
+
+/* ============================================================
+   ACTIONS
+   ============================================================ */
+document.addEventListener("click", async e=>{
+  const el = e.target.closest("[data-act]");
+  if(!el) return;
+  const a = el.dataset.act;
+  if(el.tagName==="SELECT" || el.tagName==="INPUT") return;
+
+  switch(a){
+    case "menu-toggle": UI.menuOpen = !UI.menuOpen; render(); break;
+    case "tab-bill": UI.tab="bill"; UI.view="list"; UI.menuOpen=false; render(); break;
+    case "tab-sales": UI.tab="sales"; UI.view="sales"; UI.menuOpen=false; render(); break;
+    case "view-list": UI.tab="bill"; UI.view="list"; UI.menuOpen=false; render(); break;
+    case "view-set": UI.view="set"; UI.setFY=null; UI.setMonth=null; UI.setSel={}; UI.setExtra=[]; UI.setSearch=""; render(); break;
+    case "view-history": UI.view="history"; UI.menuOpen=false; render(); break;
+    case "view-settings": UI.view="settings"; UI.menuOpen=false; render(); break;
+    case "back": UI.view = (UI.tab==="sales"?"sales":"list"); UI.menuOpen=false; render(); break;
+    case "p-prev": shiftPeriod(-1); render(); break;
+    case "p-next": shiftPeriod(1); render(); break;
+
+    case "step": { e.stopPropagation(); await clickStep(el.dataset.id, el.dataset.k); break; }
+
+    case "open": UI.billId = el.dataset.id; UI.view="detail"; render(); break;
+    case "edit": UI.billId = el.dataset.id; UI.view="form"; render(); break;
+
+    case "form-type": changeType(el.dataset.v); break;
+    case "form-save": formSave(); break;
+    case "staff-add": {
+      const v = await askText("担当名を追加", "名前", "例：山田");
+      if(v && v.trim()){
+        const name = v.trim();
+        if(DB.staff.indexOf(name)<0) DB.staff.push(name);
+        persist();
+        const b = DB.bills.find(x=>x.id===UI.billId);
+        if(b) b.staff = name;
+        persist(); render(); toast("担当を追加しました","ok");
+      }
+      break;
+    }
+    case "set-fy": break;
+    case "set-toggle": {
+      if(el.dataset.reg==="1") return;
+      const cid = el.dataset.cid;
+      UI.setSel[cid] = (UI.setSel[cid]===false);
+      render(); break;
+    }
+    case "set-all": setTargetList().forEach(c=>UI.setSel[c.id]=true); render(); break;
+    case "set-none": setTargetList().forEach(c=>UI.setSel[c.id]=false); render(); break;
+    case "set-add": openAddCustomer(); break;
+    case "set-submit": setSubmit(); break;
+
+    case "delete": {
+      const b = DB.bills.find(x=>x.id===el.dataset.id); if(!b) return;
+      if(b.locked){ toast("送付済みの行は削除できません","err"); return; }
+      const ok = await confirmModal("この行を削除しますか？", esc(customerName(b)) + " を一覧から削除します。この操作は取り消せません。","削除する","danger");
+      if(ok){ DB.bills = DB.bills.filter(x=>x.id!==b.id); persist(); UI.view="list"; render(); toast("削除しました","ok"); }
+      break;
+    }
+    case "unlock": {
+      const b = DB.bills.find(x=>x.id===el.dataset.id); if(!b) return;
+      if(!UI.admin){ toast("総務モードで実行してください","err"); return; }
+      const ok = await confirmModal("ロックを解除しますか？","送付済みの工程を取り消して編集できる状態に戻します。","解除する","danger");
+      if(ok){ b.locked=false; delete b.steps.sent; delete b.stepAt.sent; b.updatedAt=nowISO(); persist(); render(); toast("ロックを解除しました","ok"); }
+      break;
+    }
+    case "notify-retry": {
+      const b = DB.bills.find(x=>x.id===el.dataset.id); if(!b) return;
+      const res = await notifyBill(b, el.dataset.kind, true);
+      render();
+      toast(res.ok ? "再送しました" : (res.error||"再送できませんでした"), res.ok?"ok":"err");
+      break;
+    }
+    case "copy-msg": {
+      const b = DB.bills.find(x=>x.id===el.dataset.id); if(!b) return;
+      copyText(messageFor(b, b.steps.go?"go":"inputdone"));
+      break;
+    }
+    case "hist-toggle": {
+      const k = el.dataset.k;
+      const i = UI.historyMonths.indexOf(k);
+      if(i>=0) UI.historyMonths.splice(i,1); else UI.historyMonths.push(k);
+      render(); break;
+    }
+    case "scope": UI.salesScope = el.dataset.v; render(); break;
+    case "admin-toggle": {
+      UI.menuOpen = false;
+      if(UI.admin){ UI.admin=false; sessionStorage.removeItem(ADMIN_PIN_KEY); render(); toast("総務モードを終了しました"); break; }
+      render();
+      const p = await askPin();
+      if(p===null) break;
+      if(p === (DB.settings.pin||"0000")){ UI.admin=true; sessionStorage.setItem(ADMIN_PIN_KEY,"1"); render(); toast("総務モードに入りました","ok"); }
+      else { toast("PINが違います","err"); }
+      break;
+    }
+    case "save-settings": {
+      DB.settings.proxy = $("#s-proxy").value.trim();
+      persist(); toast("保存しました","ok"); break;
+    }
+    case "save-pin": {
+      const v = $("#s-pin").value.trim();
+      if(v.length<4){ toast("4桁以上にしてください","err"); break; }
+      DB.settings.pin = v; persist(); toast("PINを変更しました","ok"); break;
+    }
+    case "export": {
+      const blob = new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a2 = document.createElement("a");
+      a2.href = url; a2.download = "gekanjo-backup-" + todayStr() + ".json";
+      a2.click(); URL.revokeObjectURL(url); break;
+    }
+    case "import": {
+      const inp = document.createElement("input");
+      inp.type="file"; inp.accept=".json,application/json";
+      inp.onchange = ()=>{
+        const f = inp.files[0]; if(!f) return;
+        const r = new FileReader();
+        r.onload = ()=>{
+          try{
+            const o = JSON.parse(r.result);
+            if(!o || !Array.isArray(o.bills)) throw new Error("形式が違います");
+            DB = o; persist(); render(); toast("復元しました","ok");
+          }catch(err){ toast("復元できません：" + err.message,"err"); }
+        };
+        r.readAsText(f);
+      };
+      inp.click(); break;
+    }
+    case "checkver": checkVersion(true); break;
+    case "signout": doSignOut(); break;
+  }
+});
+
+document.addEventListener("change", e=>{
+  const el = e.target.closest("[data-act]");
+  if(!el) return;
+  const a = el.dataset.act;
+  if(a==="set-fy"){ UI.setFY = Number(el.value); UI.setSel={}; UI.setExtra=[]; render(); }
+  if(a==="set-month"){
+    const v = el.value;
+    if(v==="3t"){ UI.setMonth=3; UI.setTax=true; }
+    else { UI.setMonth=Number(v); UI.setTax=false; }
+    UI.setSel={}; UI.setExtra=[]; render();
+  }
+});
+document.addEventListener("input", e=>{
+  const el = e.target.closest("[data-act]");
+  if(!el) return;
+  if(el.dataset.act==="set-search"){
+    UI.setSearch = el.value;
+    const box = $("#setlist"), cnt = $("#setcount");
+    if(box){
+      box.innerHTML = setRowsHTML();
+      if(cnt){
+        const year = yearFor(UI.setFY, UI.setMonth);
+        const registered = new Set(DB.bills.filter(b=>b.ym===ymKey(year,UI.setMonth) && !!b.tax===UI.setTax).map(b=>b.customerId));
+        const n = masterFor(UI.setMonth,UI.setTax).filter(c=>!registered.has(c.id) && UI.setSel[c.id]!==false).length;
+        cnt.innerHTML = "選択 <b>" + n + "</b> 件";
+        const btn = document.querySelector('[data-act="set-submit"]');
+        if(btn){ btn.textContent = "セットする（" + n + "件）"; btn.disabled = !n; }
+      }
+    }
+  }
+});
+
+/* generic input modals */
+function askText(title, label, placeholder){
+  return new Promise(res=>{
+    const d = openModal('<h3>' + esc(title) + '</h3><div class="field"><label>' + esc(label) +
+      '</label><input class="input" id="ask-in" placeholder="' + esc(placeholder||"") + '"></div>' +
+      '<div class="acts"><button class="btn" data-m="no">キャンセル</button><button class="btn primary" data-m="ok">決定</button></div>');
+    const inp = $("#ask-in"); inp.focus();
+    const done = v => { closeModal(); res(v); };
+    d.addEventListener("click", e=>{ const b=e.target.closest("[data-m]"); if(!b) return;
+      if(b.dataset.m==="no") done(null); else done(inp.value); });
+    inp.addEventListener("keydown", e=>{ if(e.key==="Enter") done(inp.value); });
+  });
+}
+function askPin(){
+  return new Promise(res=>{
+    const d = openModal('<h3>総務モード</h3><p class="hint" style="margin-top:0">送付済みの解除・削除ができるモードです。</p>' +
+      '<div class="field"><label>PIN</label><input class="input" id="pin-in" type="password" inputmode="numeric" autocomplete="off"></div>' +
+      '<div class="acts"><button class="btn" data-m="no">キャンセル</button><button class="btn primary" data-m="ok">入る</button></div>');
+    const inp = $("#pin-in"); inp.focus();
+    const done = v => { closeModal(); res(v); };
+    d.addEventListener("click", e=>{ const b=e.target.closest("[data-m]"); if(!b) return;
+      if(b.dataset.m==="no") done(null); else done(inp.value); });
+    inp.addEventListener("keydown", e=>{ if(e.key==="Enter") done(inp.value); });
+  });
+}
+
+/* add customer modal */
+function openAddCustomer(){
+  const opts = DB.customers.map(c=>'<option value="' + c.id + '">' + esc(c.name) + '</option>').join("");
+  const d = openModal(
+    '<h3>得意先を個別に追加</h3>' +
+    '<div class="field"><label>マスタから選ぶ</label><select class="input" id="m-cust">' + opts + '</select></div>' +
+    '<div class="formfoot" style="justify-content:flex-start"><button class="btn" data-m="pick">この得意先を追加</button></div>' +
+    '<hr style="border:0;border-top:1px solid #e2e8f0;margin:16px 0">' +
+    '<h3 style="font-size:13.5px">マスタにない得意先を登録</h3>' +
+    '<div class="field"><label>会社名</label><input class="input" id="n-name" placeholder="株式会社◯◯"></div>' +
+    '<div class="field"><label>かな（任意）</label><input class="input" id="n-kana"></div>' +
+    '<div class="formfoot"><button class="btn" data-m="no">閉じる</button><button class="btn primary" data-m="new">登録して追加</button></div>'
+  );
+  d.addEventListener("click", ev=>{
+    const b = ev.target.closest("[data-m]"); if(!b) return;
+    const mv = b.dataset.m;
+    if(mv==="no"){ closeModal(); return; }
+    if(mv==="pick"){
+      const id = $("#m-cust").value;
+      const c = DB.customers.find(x=>x.id===id);
+      if(c){
+        UI.setSel[c.id]=true;
+        if(!masterFor(UI.setMonth,UI.setTax).some(x=>x.id===c.id) && UI.setExtra.indexOf(c.id)<0){
+          UI.setExtra.push(c.id);
+        }
+      }
+      closeModal(); render(); toast("追加しました","ok"); return;
+    }
+    if(mv==="new"){
+      const name = $("#n-name").value.trim();
+      if(!name){ toast("会社名を入力してください","err"); return; }
+      const c = { id:"c"+(DB.seq++), name, kana:$("#n-kana").value.trim(), reg:todayStr(), month:UI.setMonth, tax:UI.setTax, added:true };
+      DB.customers.push(c); UI.setSel[c.id]=true;
+      if(UI.setExtra.indexOf(c.id)<0) UI.setExtra.push(c.id);
+      persist();
+      closeModal(); render(); toast("登録しました","ok");
+    }
+  });
+}
+
+/* version check */
+async function checkVersion(explicit){
+  try{
+    const r = await fetch("version.json?_=" + Date.now(), { cache:"no-store" });
+    if(!r.ok) throw new Error("no version file");
+    const j = await r.json();
+    if(j.version && j.version !== VERSION){
+      if(confirm("新しい版 v" + j.version + " があります。読み込み直しますか？")) location.reload();
+    } else if(explicit) toast("最新版です（v" + VERSION + "）","ok");
+  }catch(e){
+    if(explicit) toast("最新版を確認できませんでした（version.json が未配置です）","err");
+  }
+}
+
+/* firebase auth gate */
+function renderLogin(msg){
+  $("#boot").remove();
+  const app = $("#app"); app.hidden=false;
+  app.innerHTML = '<div class="loginwrap"><h1 style="font-size:17px;margin:0 0 4px">月別御勘定書</h1>' +
+    '<p class="hint" style="margin:0 0 16px">事務所メンバーのアカウントでサインインしてください。</p>' +
+    (msg?'<div class="warnbanner">' + esc(msg) + '</div>':'') +
+    '<div class="field"><label>メールアドレス</label><input class="input" id="l-mail" type="email" autocomplete="username"></div>' +
+    '<div class="field"><label>パスワード</label><input class="input" id="l-pass" type="password" autocomplete="current-password"></div>' +
+    '<button class="btn primary" style="width:100%" id="l-go">サインイン</button></div>';
+  $("#l-go").onclick = async ()=>{
+    const mail = $("#l-mail").value.trim(), pass = $("#l-pass").value;
+    sessionStorage.setItem("gekanjo.mail", mail);
+    sessionStorage.setItem("gekanjo.pass", pass);
+    try{
+      await cloud.au.signInWithEmailAndPassword(cloud.auth, mail, pass);
+      await bootCloudData();
+    }catch(e){
+      renderLogin("サインインできませんでした：" + (e.message||""));
+    }
+  };
+}
+async function bootCloudData(){
+  const fs = cloud.fs;
+  const snap = await fs.getDoc(cloud.docRef);
+  if(snap.exists() && snap.data().data){ DB = snap.data().data; }
+  else { DB = freshDB(); seedMaster(); await cloud.docRef.set({data:DB, updatedAt:nowISO()}); }
+  cloud.on = true;
+  if(cloud.unsub) cloud.unsub();
+  cloud.unsub = fs.onSnapshot(cloud.docRef, s=>{
+    if(!s.exists()) return;
+    const d = s.data().data;
+    if(!d) return;
+    // 自分の書き込み直後のループを避けるため updatedAt を比較
+    if(d.settings && DB && d.settings.updatedAt && DB.settings && d.settings.updatedAt === DB.settings.updatedAt) return;
+    DB = d;
+    if(UI.view) render();
+  });
+  UI.admin = sessionStorage.getItem(ADMIN_PIN_KEY)==="1";
+  render();
+}
+async function doSignOut(){
+  try{ await cloud.au.signOut(cloud.auth); }catch(e){}
+  sessionStorage.removeItem("gekanjo.mail");
+  sessionStorage.removeItem("gekanjo.pass");
+  location.reload();
+}
+
+/* ---------- boot ---------- */
+async function boot(){
+  if(FIREBASE_CONFIG){
+    try{
+      const r = await initCloud();
+      if(r==="need_login"){ renderLogin(); return; }
+      await bootCloudData();
+      return;
+    }catch(e){
+      // 失敗時は端末保存で動かす
+      DB = loadLocal(); if(!DB){ DB = freshDB(); }
+      seedMaster(); persist();
+      render();
+      toast("共有保存に接続できませんでした。この端末に保存しています。","err");
+      return;
+    }
+  }
+  DB = loadLocal();
+  if(!DB){ DB = freshDB(); seedMaster(); persist(); }
+  else { seedMaster(); }
+  UI.admin = sessionStorage.getItem(ADMIN_PIN_KEY)==="1";
+  render();
+  checkVersion(false);
+}
+boot();
+</script>
+</body>
+</html>
