@@ -1342,7 +1342,7 @@ async function checkVersion(explicit){
 
 /* firebase auth gate */
 function renderLogin(msg){
-  $("#boot").remove();
+  const boot = $("#boot"); if(boot) boot.remove();
   const app = $("#app"); app.hidden=false;
   app.innerHTML = '<div class="loginwrap"><h1 style="font-size:17px;margin:0 0 4px">月別御勘定書</h1>' +
     '<p class="hint" style="margin:0 0 16px">事務所メンバーのアカウントでサインインしてください。</p>' +
@@ -1352,13 +1352,15 @@ function renderLogin(msg){
     '<button class="btn primary" style="width:100%" id="l-go">サインイン</button></div>';
   $("#l-go").onclick = async ()=>{
     const mail = $("#l-mail").value.trim(), pass = $("#l-pass").value;
+    const btn = $("#l-go");
+    btn.disabled = true; btn.textContent = "サインイン中…";
     sessionStorage.setItem("gekanjo.mail", mail);
     sessionStorage.setItem("gekanjo.pass", pass);
     try{
       await cloud.au.signInWithEmailAndPassword(cloud.auth, mail, pass);
       await bootCloudData();
     }catch(e){
-      renderLogin("サインインできませんでした：" + (e.message||""));
+      renderLogin("サインインできませんでした：" + (e && e.message ? e.message : "通信エラー"));
     }
   };
 }
