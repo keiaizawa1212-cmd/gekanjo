@@ -291,14 +291,15 @@ const STEPS = [
 ];
 const STEP_KEYS = STEPS.map(s=>s.k);
 
-/* Firebase を使う場合だけ設定（静的ホスティング＋共有保存） */
-const FIREBASE_CONFIG = null;
-/* 例:
+/* Firebase（共有保存・ログイン）。未設定なら端末内保存で動く */
 const FIREBASE_CONFIG = {
-  apiKey:"...", authDomain:"xxx.firebaseapp.com", projectId:"xxx",
-  storageBucket:"xxx.appspot.com", messagingSenderId:"...", appId:"..."
+  apiKey: "AIzaSyDPrynTVKW3f1ZIiZnfNXiew5ix39PlEhE",
+  authDomain: "gekanjo-84221.firebaseapp.com",
+  projectId: "gekanjo-84221",
+  storageBucket: "gekanjo-84221.firebasestorage.app",
+  messagingSenderId: "846002231594",
+  appId: "1:846002231594:web:c6a7bb4b09b88c4b08e653"
 };
-*/
 const ADMIN_PIN_KEY = "gekanjo.admin";
 
 /* ---------- utils ---------- */
