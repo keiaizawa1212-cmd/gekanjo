@@ -2,29 +2,31 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>月別御勘定書</title>
-<style>body{margin:0;font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;color:#64748b;padding:80px 20px;text-align:center;font-size:14px}</style>
+<style>body{margin:0;font-family:sans-serif;color:#64748b;padding:80px 20px;text-align:center;font-size:14px}</style>
 </head>
 <body>読み込み中…
 <script>
 (function(){
-var KEY="AIzaSyDPrynTVKW3f1ZIiZnfnXIew5ix39PlEhE";
-var DOC="https://firestore.googleapis.com/v1/projects/gekanjo-84221/databases/(default)/documents/gekanjo_workspace/app";
-function fail(m){ document.body.textContent=m; }
-fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+KEY,{method:"POST",headers:{"Content-Type":"application/json"},body:"{} (https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=%22+KEY,%7Bmethod:%22POST%22,headers:%7B%22Content-Type%22:%22application/json%22%7D,body:%22%7B%7D)"})
-.then(function(r){ return r.json(); })
+var K="AIzaSyDPrynTVKW3f1ZIiZnfnXIew5ix39PlEhE";
+var A="https://identitytoolkit"+".googleapis.com";
+var F="https://firestore"+".googleapis.com";
+var D=F+"/v1/projects/gekanjo-84221/databases/(default)/documents/gekanjo_workspace/app";
+function fail(m){document.body.textContent=m;}
+fetch(A+"/v1/accounts:signUp?key="+K,{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"})
+.then(function(r){return r.json();})
 .then(function(a){
 if(!a.idToken) throw new Error("ログインに失敗しました");
-return fetch(DOC,{headers:{Authorization:"Bearer "+a.idToken}});
+return fetch(D,{headers:{Authorization:"Bearer "+a.idToken}});
 })
-.then(function(r){ return r.json(); })
+.then(function(r){return r.json();})
 .then(function(j){
-var html=j && j.fields && j.fields.html && j.fields.html.stringValue;
-if(!html) return fail("アプリの本体が見つかりませんでした。");
-document.open(); document.write(html); document.close();
+var h=j&&j.fields&&j.fields.html&&j.fields.html.stringValue;
+if(!h) return fail("本体が見つかりませんでした");
+document.open();document.write(h);document.close();
 })
-.catch(function(e){ fail("読み込みに失敗しました：" + e.message); });
+.catch(function(e){fail("読み込みに失敗しました："+e.message);});
 })();
 </script>
 </body>
