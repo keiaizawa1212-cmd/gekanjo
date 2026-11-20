@@ -371,7 +371,7 @@ function persist(){
   if(cloud.on && cloud.docRef){
     clearTimeout(saveTimer);
     saveTimer = setTimeout(()=>{
-      cloud.docRef.set({ data: DB, updatedAt: nowISO() }, { merge:false })
+      cloud.fs.setDoc(cloud.docRef,{ data: DB, updatedAt: nowISO() }, { merge:false })
         .catch(e=>toast("共有保存に失敗しました：" + (e && e.message ? e.message : "通信エラー"),"err"));
     }, 400);
   } else {
@@ -1368,7 +1368,7 @@ async function bootCloudData(){
   const fs = cloud.fs;
   const snap = await fs.getDoc(cloud.docRef);
   if(snap.exists() && snap.data().data){ DB = snap.data().data; }
-  else { DB = freshDB(); seedMaster(); await cloud.docRef.set({data:DB, updatedAt:nowISO()}); }
+  else { DB = freshDB(); seedMaster(); await cloud.fs.setDoc(cloud.docRef,{data:DB, updatedAt:nowISO()}); }
   cloud.on = true;
   if(cloud.unsub) cloud.unsub();
   cloud.unsub = fs.onSnapshot(cloud.docRef, s=>{
