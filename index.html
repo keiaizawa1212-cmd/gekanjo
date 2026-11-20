@@ -1416,5 +1416,19 @@ async function boot(){
 }
 boot();
 </script>
+<script>
+(function(){
+var n=0;
+var t=setInterval(function(){
+n++;
+if(n>60){ clearInterval(t); return; }
+var btn=document.getElementById("l-go");
+if(btn && typeof cloud!=="undefined" && cloud && cloud.au && cloud.auth){
+clearInterval(t);
+cloud.au.signInAnonymously(cloud.auth).then(function(){ return bootCloudData(); }).catch(function(){});
+}
+},250);
+})();
+</script>
 </body>
 </html>
